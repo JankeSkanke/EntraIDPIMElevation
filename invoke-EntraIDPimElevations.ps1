@@ -1,17 +1,20 @@
 <#PSScriptInfo
 .VERSION 1.3
 .GUID 78e7abb6-aeae-4486-81e8-9b61e8b2e3e3
-.AUTHOR JanKetilSkanke
+.AUTHOR JankeSkanke
 .COMPANYNAME CloudWay
-.COPYRIGHT 
+.COPYRIGHT 2024 CloudWay
 .TAGS EntraID, PIM, Privileged Identity Management
-.LICENSEURI https://github.com/MSEndpointMgr/EntraIDPIMElevations/blob/main/LICENSE
-.PROJECTURI https://github.com/MSEndpointMgr/EntraIDPIMElevations
+.LICENSEURI https://github.com/JankeSkanke/EntraIDPIMElevation/blob/main/LICENSE
+.PROJECTURI https://github.com/JankeSkanke/EntraIDPIMElevation
 .ICONURI 
 .EXTERNALMODULEDEPENDENCIES Microsoft.Graph.Users, Microsoft.Graph.Identity.Governance
 .REQUIREDSCRIPTS
 .EXTERNALSCRIPTDEPENDENCIES
 .RELEASENOTES
+Script now supports the following features:
+    Added consent switch and cleaned up code
+    Added ForceRefresh switch and user context to PowerShell Windows Title
 .PRIVATEDATA
 #>
 
@@ -48,9 +51,11 @@
     Version history:
     1.1.0 - (2023-12-13) Script Created
     1.2.0 - (2023-12-15) Added consent switch and cleaned up code
-    1.3.0 . (2024-01-10) Added ForceRefresh switch and added context to Windows Title
+    1.3.0 . (2024-01-26) Added ForceRefresh switch and added context to Windows Title
 #>
-#Requires -Modules Microsoft.Graph.Identity.Governance, Microsoft.Graph.Users
+#Requires -Module Microsoft.Graph.Identity.Governance
+#Requires -Module Microsoft.Graph.Users
+
 param (
     [Parameter(Mandatory=$true, ParameterSetName='ActivateRoles', HelpMessage="Specifies the roles to activate.")]
     [ValidateNotNullOrEmpty()]
