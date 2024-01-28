@@ -1,38 +1,45 @@
 #https://learn.microsoft.com/en-us/graph/api/privilegedaccessgroupeligibilityschedulerequest-filterbycurrentuser?view=graph-rest-1.0&tabs=http
 
-
 Connect-MgGraph -Scopes "RoleManagement.ReadWrite.Directory"
 
-Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser -On "principal"
+Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser 
+
+Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser -On "principal" 
+
+-ExpandProperty RoleDefinition -All 
 
 $MyContext = Get-MgContext
 $Me = (Get-MgUser -UserId $MyContext.Account).Id
 
-$MyEligibleGroups = Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser -On 'principal'
+$MyEligibleGroups = Get-MgIdentityGovernancePrivilegedAccessGroupEligibilityScheduleInstance -Filter "principalId eq '$Me'" | Select-Object accessId, GroupId
 
 foreach ($group in $MyEligibleGroups) {
     $CurrentGroup = Get-MGGroup -GroupID $group.GroupId
     Write-Output "Eligible group: $($CurrentGroup.DisplayName) with ID $($CurrentGroup.Id)"
 }
 
-Import-Module Microsoft.Graph.Identity.Governance
-
-$Now = Get-Date().ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+$MyGroupIdToElevate = (Get-MGGroup -Filter "displayName eq 'EntraID PIM Group 3'").Id
+$Reason = "Active group membership"
+$ActivationDuration = 1
 
 $params = @{
 	accessId = "member"
 	principalId = $Me
-	groupId = "d3152ac7-1c13-4e15-8cf4-7c806f3245d8"
+	groupId = $MyGroupIdToElevate
 	action = "selfActivate"
 	scheduleInfo = @{
 		startDateTime = Get-Date
 		expiration = @{
 			type = "afterDuration"
-			duration = "PT2H"
+			duration = "PT$($ActivationDuration)H"
 		}
 	}
-	justification = "Activate assignment."
+	justification = $Reason
 }
+$MyActivation = New-MgIdentityGovernancePrivilegedAccessGroupAssignmentScheduleRequest -BodyParameter $params   
+$MyActivation | fl *
 
-New-MgIdentityGovernancePrivilegedAccessGroupAssignmentScheduleRequest -BodyParameter $params
+
+Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser -On "principal" | Select-Object -ExpandProperty Group
+
 
