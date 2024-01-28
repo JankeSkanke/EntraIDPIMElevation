@@ -18,12 +18,13 @@ foreach ($group in $MyEligibleGroups) {
     Write-Output "Eligible group: $($CurrentGroup.DisplayName) with ID $($CurrentGroup.Id)"
 }
 
-$MyGroupIdToElevate = (Get-MGGroup -Filter "displayName eq 'EntraID PIM Group 3'").Id
+$MyGroupIdToElevate = (Get-MGGroup -Filter "displayName eq 'Intune Role - Read Only Operator'").Id
 $Reason = "Active group membership"
 $ActivationDuration = 1
+$accessId = ($MyEligibleGroups | Where-Object {$_.GroupId -eq $MyGroupIdToElevate}).accessId 
 
 $params = @{
-	accessId = "member"
+	accessId = $accessId
 	principalId = $Me
 	groupId = $MyGroupIdToElevate
 	action = "selfActivate"
