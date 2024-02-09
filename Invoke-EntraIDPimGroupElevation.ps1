@@ -2,12 +2,6 @@
 
 Connect-MgGraph -Scopes "RoleManagement.ReadWrite.Directory"
 
-Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser 
-
-Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser -On "principal" 
-
--ExpandProperty RoleDefinition -All 
-
 $MyContext = Get-MgContext
 $Me = (Get-MgUser -UserId $MyContext.Account).Id
 
@@ -15,10 +9,10 @@ $MyEligibleGroups = Get-MgIdentityGovernancePrivilegedAccessGroupEligibilitySche
 
 foreach ($group in $MyEligibleGroups) {
     $CurrentGroup = Get-MGGroup -GroupID $group.GroupId
-    Write-Output "Eligible group: $($CurrentGroup.DisplayName) with ID $($CurrentGroup.Id)"
+    Write-Output "Type: $($group.accessId) : $($CurrentGroup.DisplayName)"
 }
-
-$MyGroupIdToElevate = (Get-MGGroup -Filter "displayName eq 'Intune Role - Read Only Operator'").Id
+$GroupNameToElevate = "EntraID PIM Group 2"
+$MyGroupIdToElevate = (Get-MGGroup -Filter "displayName eq '$($GroupNameToElevate)'").Id
 $Reason = "Active group membership"
 $ActivationDuration = 1
 $accessId = ($MyEligibleGroups | Where-Object {$_.GroupId -eq $MyGroupIdToElevate}).accessId 
@@ -37,10 +31,14 @@ $params = @{
 	}
 	justification = $Reason
 }
-$MyActivation = New-MgIdentityGovernancePrivilegedAccessGroupAssignmentScheduleRequest -BodyParameter $params   
-$MyActivation | fl *
-
-
-Invoke-MgFilterIdentityGovernancePrivilegedAccessGroupEligibilityScheduleRequestByCurrentUser -On "principal" | Select-Object -ExpandProperty Group
+try {
+	$MyActivation = New-MgIdentityGovernancePrivilegedAccessGroupAssignmentScheduleRequest -BodyParameter $params -ErrorAction Stop 	
+	Write-Output "Actived group $($GroupNameToElevate) $($accessId) for $($ActivationDuration) hours"
+}
+catch {
+	<#Do this if a terminating exception happens#>
+	Write-Output "Failed activating $($accessId) to group $($GroupNameToElevate)"
+	Write-Warning "$($_.Exception.Message)"
+}
 
 
