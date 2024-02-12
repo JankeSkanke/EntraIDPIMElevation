@@ -64,6 +64,7 @@ Script now supports the following features:
 #>
 #Requires -Module Microsoft.Graph.Identity.Governance
 #Requires -Module Microsoft.Graph.Users
+#Requires -Module Microsoft.Graph.Groups
 
 param (
     [Parameter(Mandatory=$true, ParameterSetName='ActivateRoles', HelpMessage="Specifies the roles to activate.")]
@@ -76,6 +77,8 @@ param (
     [string]$Justification,
     [Parameter(Mandatory=$false, ParameterSetName='ActivateRoles', HelpMessage="Get all available eligible roles for the user.")]
     [Parameter(Mandatory=$false, ParameterSetName='ActivateGroups', HelpMessage="Specifies justification for activation.")]
+    [Parameter(Mandatory=$false, ParameterSetName='GetRoles', HelpMessage="Get all available eligible roles for the user.")]
+    [Parameter(Mandatory=$false, ParameterSetName='GetGroups', HelpMessage="Get all available eligible groups for the user.")]
     [switch]$ForceRefresh,
     [Parameter(Mandatory=$false, ParameterSetName='ActivateRoles', HelpMessage="Specifies the duration of the activation.")]
     [Parameter(Mandatory=$false, ParameterSetName='ActivateGroups', HelpMessage="Specifies justification for activation.")]
@@ -102,7 +105,7 @@ if ($ForceRefresh) {
 # Check if consent is requested and request it if true
 if ($Consent) {
     try {
-        Connect-MgGraph -Scopes "RoleEligibilitySchedule.Read.Directory, RoleAssignmentSchedule.ReadWrite.Directory, User.Read.All" -NoWelcome -ErrorAction Stop
+        Connect-MgGraph -Scopes "RoleEligibilitySchedule.Read.Directory, RoleAssignmentSchedule.ReadWrite.Directory, User.Read.All, GroupMember.Read.All" -NoWelcome -ErrorAction Stop
         Write-Host "Consent OK, exiting script" -ForegroundColor Green
         Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null
     exit      
