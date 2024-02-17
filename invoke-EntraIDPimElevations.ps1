@@ -60,7 +60,7 @@ Script now supports the following features:
     1.1.0 - (2023-12-13) Script Created
     1.2.0 - (2023-12-15) Added consent switch and cleaned up code
     1.3.0 . (2024-01-26) Added ForceRefresh switch and added context to Windows Title
-    1.4.0 . (2024-02-01) Added support for activating PIM Group Memberships and Ownerships
+    1.4.0 . (2024-02-17) Added support for activating PIM Group Memberships and Ownerships
 #>
 #Requires -Module Microsoft.Graph.Identity.Governance
 #Requires -Module Microsoft.Graph.Users
