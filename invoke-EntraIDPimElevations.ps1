@@ -24,7 +24,7 @@ Script now supports the following features:
     Name: invoke-EntraIDPimElevations.ps1
     Script to activate Eligible roles or Groups in Entra ID PIM for a user
 .DESCRIPTION
-    Script to activate Eligible roles or Grpups in Entra ID PIM for a user
+    Script to activate Eligible roles or Groups in Entra ID PIM for a user
 .PARAMETER RolesToActivate
     Comma separated list of roles to activate, Example -RolesToActivate "Global Reader, Intune Administrator"
 .PARAMETER Justification
