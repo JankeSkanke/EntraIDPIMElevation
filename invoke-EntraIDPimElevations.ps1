@@ -1,5 +1,5 @@
 <#PSScriptInfo
-.VERSION 1.4
+.VERSION 1.4.1
 .GUID 78e7abb6-aeae-4486-81e8-9b61e8b2e3e3
 .AUTHOR JankeSkanke
 .COMPANYNAME CloudWay
@@ -8,7 +8,7 @@
 .LICENSEURI https://github.com/JankeSkanke/EntraIDPIMElevation/blob/main/LICENSE
 .PROJECTURI https://github.com/JankeSkanke/EntraIDPIMElevation
 .ICONURI 
-.EXTERNALMODULEDEPENDENCIES Microsoft.Graph.Users, Microsoft.Graph.Identity.Governance
+.EXTERNALMODULEDEPENDENCIES Microsoft.Graph.Users, Microsoft.Graph.Identity.Governance, Microsoft.Graph.Groups
 .REQUIREDSCRIPTS
 .EXTERNALSCRIPTDEPENDENCIES
 .RELEASENOTES
@@ -24,7 +24,7 @@ Script now supports the following features:
     Name: invoke-EntraIDPimElevations.ps1
     Script to activate Eligible roles or Groups in Entra ID PIM for a user
 .DESCRIPTION
-    Script to activate Eligible roles or Grpups in Entra ID PIM for a user
+    Script to activate Eligible roles or Groups in Entra ID PIM for a user
 .PARAMETER RolesToActivate
     Comma separated list of roles to activate, Example -RolesToActivate "Global Reader, Intune Administrator"
 .PARAMETER Justification
@@ -61,10 +61,9 @@ Script now supports the following features:
     1.2.0 - (2023-12-15) Added consent switch and cleaned up code
     1.3.0 . (2024-01-26) Added ForceRefresh switch and added context to Windows Title
     1.4.0 . (2024-02-01) Added support for activating PIM Group Memberships and Ownerships
+    1.4.1 . (2024-02-19) Bugfixes
 #>
-#Requires -Module Microsoft.Graph.Identity.Governance
-#Requires -Module Microsoft.Graph.Users
-#Requires -Module Microsoft.Graph.Groups
+#Requires -Module Microsoft.Graph.Identity.Governance,  Microsoft.Graph.Users, Microsoft.Graph.Groups
 
 param (
     [Parameter(Mandatory=$true, ParameterSetName='ActivateRoles', HelpMessage="Specifies the roles to activate.")]
@@ -128,7 +127,10 @@ try {
         Disconnect-MgGraph -ErrorAction SilentlyContinue | Out-Null
         exit
     }#>
-    $host.ui.RawUI.WindowTitle = $($MyContext.Account)
+    #Set Windows Title if not in Constrained Language Mode
+    if ($ExecutionContext.SessionState.LanguageMode -ne "ConstrainedLanguage") {
+        $host.ui.RawUI.WindowTitle = $($MyContext.Account)
+    }
     Write-Output "Connected as $($MyContext.Account)"     
 }
 catch {
@@ -139,7 +141,7 @@ catch {
 
 switch ($PSCmdlet.ParameterSetName) {
     "GetGroups"{
-        $MyEligibleGroups = Get-MgIdentityGovernancePrivilegedAccessGroupEligibilityScheduleInstance -Filter "principalId eq '$Me'" | Select-Object accessId, GroupId
+        $MyEligibleGroups = Get-MgIdentityGovernancePrivilegedAccessGroupEligibilityScheduleInstance -Filter "principalId eq '$Me'" | Where-Object {$_.Id -ne $null} | Select-Object accessId, GroupId
         if ($($MyEligibleGroups.count) -eq 0) {
             Write-Warning "No eligible groups found, exiting script"
             break
@@ -154,7 +156,7 @@ switch ($PSCmdlet.ParameterSetName) {
     "GetRoles"{
         # Try to get all eligible roles for user for processing
         try {
-            $myRoles = Get-MgRoleManagementDirectoryRoleEligibilitySchedule -ExpandProperty RoleDefinition -All -Filter "principalId eq '$Me'" -ErrorAction Stop
+            $myRoles = Get-MgRoleManagementDirectoryRoleEligibilitySchedule -ExpandProperty RoleDefinition -All -Filter "principalId eq '$Me'" -ErrorAction Stop | Where-Object {$_.RoleDefinition.Id -ne $null}
         }
         catch {
             Write-Warning "Failed to get eligible roles: $($_.Exception.Message), exiting script"
@@ -171,7 +173,7 @@ switch ($PSCmdlet.ParameterSetName) {
     }
     "ActivateRoles"{
         try {
-            $myRoles = Get-MgRoleManagementDirectoryRoleEligibilitySchedule -ExpandProperty RoleDefinition -All -Filter "principalId eq '$Me'" -ErrorAction Stop
+            $myRoles = Get-MgRoleManagementDirectoryRoleEligibilitySchedule -ExpandProperty RoleDefinition -All -Filter "principalId eq '$Me'" -ErrorAction Stop | Where-Object {$_.RoleDefinition.Id -ne $null}
         }
         catch {
             Write-Warning "Failed to get eligible roles: $($_.Exception.Message), exiting script"
@@ -233,8 +235,7 @@ switch ($PSCmdlet.ParameterSetName) {
     }
     "ActivateGroups"{
         try {
-            $MyEligibleGroups = Get-MgIdentityGovernancePrivilegedAccessGroupEligibilityScheduleInstance -Filter "principalId eq '$Me'" | Select-Object accessId, GroupId -ErrorAction Stop
-
+            $MyEligibleGroups = Get-MgIdentityGovernancePrivilegedAccessGroupEligibilityScheduleInstance -Filter "principalId eq '$Me'" | Where-Object {$_.Id -ne $null} | Select-Object accessId, GroupId -ErrorAction Stop
         }
         catch {
             Write-Warning "Failed to get eligible groups: $($_.Exception.Message), exiting script"
